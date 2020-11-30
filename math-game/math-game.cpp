@@ -7,6 +7,21 @@
 #include <ctime>
 using namespace std;
 
+void credits(string&);
+void menu(string, int&, int&, double&);
+void retrieveStats(ofstream&, ifstream&, string&, int&, int&, double&);
+void getUserName(string&);
+void validateUserResponse(string&);
+int validateUserAnswer(string);
+int checkUserAnswer(int, int);
+void updateStats(int, int&, int&, double&);
+void displayStats(string, int, int, double);
+void saveStats(ofstream&, string, int, int, double);
+int generateAddition();
+int generateSubtraction();
+int generateMultiplication();
+int generateDivision();
+
 int main()
 {
     ofstream outputFile;
