@@ -54,7 +54,7 @@ void credits(string& continu)
 {
 	cout << "*-------------------------------------*" << endl;
 	cout << ":            The Math Game            :" << endl;
-	cout << ":            by Team Sigma              :" << endl;
+	cout << ":          by Team FullHouse             :" << endl;
 	cout << ":    (Todor,Stanimir,Andrei,Valentin)           :" << endl;
 	cout << "*-------------------------------------*" << endl;
 	cout << ":                                     :" << endl;
