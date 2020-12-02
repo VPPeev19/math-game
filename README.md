@@ -2,8 +2,8 @@
 <hr>
 •Valentin Peev - Scrum Trainer <br>
 •Andrey Andreev - Developer 3 Code Check <br>
-•Stanimir Dimitrov- Developer 1 Front End <br>
-•Todor Zafirov - Developer C++ <br>
+•Stanimir Dimitrov- Developer C++ <br>
+•Todor Zafirov - Developer 1 Front End <br>
 
 # For the game
 <hr>
