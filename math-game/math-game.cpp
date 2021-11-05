@@ -1,499 +1,315 @@
 #include <iostream>
-#include <fstream>
-#include <string>
-#include <iomanip>
-#include <cstring>
-#include <cstdlib>
-#include <ctime>
+#include <windows.h>
+#include <conio.h>//We have this library,so that we can freely use the getch() function
+#include <string>//We have this library, so that we can use strings
 using namespace std;
 
-//Declare appripriate function prototypes (some functions are returning value function).
-void credits(string&);
-void menu(string, int&, int&, double&);
-void retrieveStats(ofstream&, ifstream&, string&, int&, int&, double&);
-void getUserName(string&);
-void validateUserResponse(string&);
-int validateUserAnswer(string);
-int checkUserAnswer(int, int);
-void updateStats(int, int&, int&, double&);
-void displayStats(string, int, int, double);
-void saveStats(ofstream&, string, int, int, double);
-int generateAddition();
-int generateSubtraction();
-int generateMultiplication();
-int generateDivision();
+// #define is used to allow the programmer to give a name to a constant value before the program is compiled
+#define KEY_UP 72
+#define KEY_DOWN 80
+#define KEY_LEFT 75
+#define KEY_RIGHT 77
 
-int main()
-{
-	//Declare appropriate variables.
-	ofstream outputFile;
-	ifstream inputFile;
-	int correct = 0, wrong = 0;
-	double earning = 0.00;
-	string name, continu = "y";
+struct CELL {
+    int playerY = 1;
+    int playerX = 0;
+    bool isVisited = false;
+    bool isWall = false;
+    bool isPlayer = false;
+};
+CELL playerCord;
 
-	//srand() is used to create random number every moment.
-	unsigned seed = time(0);
-	srand(seed);
-
-	//Again, We added do-while loop to make the program more like an actual game.
-	do
-	{
-		credits(continu);
-		if (continu == "y" || continu == "Y")
-		{
-			retrieveStats(outputFile, inputFile, name, correct, wrong, earning);
-			menu(name, correct, wrong, earning);
-			saveStats(outputFile, name, correct, wrong, earning);
-
-			//Reset the statistic variables for next user.
-			correct = 0;
-			wrong = 0;
-			earning = 0.00;
-		}
-	} while (continu == "y" || continu == "Y");
-	return 0;
+void color(int color) {
+    SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), color);
 }
 
-//Home screen to display the name of the program and my name.
-void credits(string& continu)
-{
-	cout << "*-------------------------------------*" << endl;
-	cout << ":            The Math Game            :" << endl;
-	cout << ":          by Team FullHouse          :" << endl;
-	cout << ":    (Todor,Stanimir,Andrei,Valentin) :" << endl;
-	cout << "*-------------------------------------*" << endl;
-	cout << ":                                     :" << endl;
-	cout << ":                                     :" << endl;
-	cout << ":         Press y/Y to play.          :" << endl;
-	cout << ":         Press anything else         :" << endl;
-	cout << ":        to exit the program.         :" << endl;
-	cout << ":                                     :" << endl;
-	cout << ":                                     :" << endl;
-	cout << "*-------------------------------------*" << endl;
-	getline(cin, continu);
+void gotoxy(int x, int y) {
+    COORD c;
+    c.X = x;
+    c.Y = y;
+    SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), c);
 }
 
-//Retrieve user data function.
-void retrieveStats(ofstream& outputFile, ifstream& inputFile, string& name, int& correct, int& wrong, double& earning)
-{
-	//Declare appropriate variables.
-	string userName;
-
-	//Call get user name function.
-	getUserName(userName);
-
-	name = userName;
-	userName += ".txt";
-
-	//open an inputfile.
-	inputFile.open(userName.c_str());
-
-	//If the inputfile with the user name does not exist, the program will proceed to the game WITHOUT retrieving the user data file.
-	if (inputFile.is_open())
-	{
-		//retrieving.
-		inputFile >> name;
-		inputFile >> correct;
-		inputFile >> wrong;
-		inputFile >> earning;
-		inputFile.close();
-
-		//Program will greet a returning user.
-		system("cls");
-		cout << "*-------------------------------------*" << endl;
-		cout << ":       Welcome back! " << left << setw(10) << name << "      :" << endl;
-		cout << ":                                     :" << endl;
-	}
-	else
-	{
-		//Program will greet a new user.
-		system("cls");
-		cout << "*-------------------------------------*" << endl;
-		cout << ":      Welcome to the Math Game!      :" << endl;
-		cout << ":              " << left << setw(10) << name << "             :" << endl;
-	}
+void menu() {
+    cout << "*-------------------------------------*" << endl;
+    cout << ":            The Maze Game            :" << endl;
+    cout << ":         by Team Anti-Xenon          :" << endl;
+    cout << ":    (Georgi,Stanimir,Zhivko,Vasil)   :" << endl;
+    cout << "*-------------------------------------*" << endl;
+    cout << ":                                     :" << endl;
+    cout << ":                                     :" << endl;
+    cout << ":        Welcome to our simple        :" << endl;
+    cout << ":             Maze game.              :" << endl;
+    cout << ":                                     :" << endl;
+    cout << ":                                     :" << endl;
+    cout << "*-------------------------------------*" << endl;
 }
 
-//main menu function.
-void menu(string name, int& correct, int& wrong, double& earning)
-{
-	//Declare appropriate variables.
-	string select, answer;
-	int correctAnswer, answerNum, rightOrWrong = 0;
-
-	//do-while loop is used for menu-driven loop.
-	do
-	{
-		cout << "*-------------------------------------*" << endl;
-		cout << ":              Game Menu              :" << endl;
-		cout << ":    (1) Addition                     :" << endl;
-		cout << ":    (2) Subtraction                  :" << endl;
-		cout << ":    (3) Multiplication               :" << endl;
-		cout << ":    (4) Division                     :" << endl;
-		cout << ":    (5) Current statistic            :" << endl;
-		cout << ":    (N) Save and return to home      :" << endl;
-		cout << "*-------------------------------------*" << endl;
-		getline(cin, select);
-
-		//Calling the function that validates the user input for menu selection.
-		//A string data type was used for menu selection.
-		validateUserResponse(select);
-
-		//After validating, depending on the selection, the program will execute the selected option.
-		// choice 1 is Addition.
-		if (select == "1")
-		{
-			//Set the correct answer to the returned value from the generateAddition function.
-			correctAnswer = generateAddition();
-
-			//Asks the user to type in the user's answer.
-			getline(cin, answer);
-
-			//Validate the user's answer and convert it to integer and set it to a variable answerNum
-			answerNum = validateUserAnswer(answer);
-
-			//rightOrWrong variable will determine whether the user's answer is correct or incorrect by having either 1 or 0 integer value.
-			rightOrWrong = checkUserAnswer(correctAnswer, answerNum);
-
-			//Calling updateStats function. rightOrWrong variable is used.
-			updateStats(rightOrWrong, correct, wrong, earning);
-		}
-		//Subtraction.
-		else if (select == "2")
-		{
-			correctAnswer = generateSubtraction();
-			getline(cin, answer);
-			answerNum = validateUserAnswer(answer);
-			rightOrWrong = checkUserAnswer(correctAnswer, answerNum);
-			updateStats(rightOrWrong, correct, wrong, earning);
-		}
-		//Multiplication.
-		else if (select == "3")
-		{
-			correctAnswer = generateMultiplication();
-			getline(cin, answer);
-			answerNum = validateUserAnswer(answer);
-			rightOrWrong = checkUserAnswer(correctAnswer, answerNum);
-			updateStats(rightOrWrong, correct, wrong, earning);
-		}
-		//Division.
-		else if (select == "4")
-		{
-			correctAnswer = generateDivision();
-			getline(cin, answer);
-			answerNum = validateUserAnswer(answer);
-			rightOrWrong = checkUserAnswer(correctAnswer, answerNum);
-			updateStats(rightOrWrong, correct, wrong, earning);
-		}
-		//Displaying the statistic of user's current progress.
-		else if (select == "5")
-		{
-			//clears the screen, and call the displayStats function.
-			system("cls");
-			displayStats(name, correct, wrong, earning);
-			system("cls");
-			cout << "*-------------------------------------*" << endl;
-			cout << ":                                     :" << endl;
-			cout << ":                                     :" << endl;
-		}
-		//Returning to the home screen.
-		else
-		{
-			system("cls");
-		}
-	} while (!(select == "n" || select == "N"));
+// this function generates the maze,by previously entered size
+void printMaze(CELL** maze, int size, char free, char player) {
+    for (int i = 0; i < size; i++) {
+        for (int j = 0; j < size; j++) {
+            if (maze[i][j].isPlayer == true) {
+                cout << player << " ";
+            }
+            else if (maze[i][j].isVisited == true) {
+                cout << free << " ";
+            }
+            else {
+                cout << char(254) << " ";
+            }
+        }
+        cout << endl;
+    }
 }
 
-//Function that gets the user name.
+// this function generates the walls of the maze
+void createWalls(CELL** maze, int size, int* cellCount) {
+    for (int y = 0; y < size; y++) {
+        for (int x = 0; x < size; x++) {
+            if ((x % 2 == 0) || (y % 2 == 0)) {
+                maze[y][x].isWall = true;
+            }
+            else {
+                ++* cellCount;
+            }
+        }
+    }
+}
+
+void toVisited(CELL** maze, int* cordY, int* cordX, int dir, int* unvisitedCells) {
+    switch (dir) {
+    case 0:
+        if (maze[*cordY - 2][*cordX].isVisited == false) {
+            maze[*cordY - 2][*cordX].isVisited = true;
+            maze[*cordY - 2][*cordX].isWall = false;
+            maze[*cordY - 1][*cordX].isVisited = true;
+            maze[*cordY - 1][*cordX].isWall = false;
+            ++* unvisitedCells;
+        }
+        *cordY -= 2;
+        break;
+    case 1:
+        if (maze[*cordY][*cordX + 2].isVisited == false) {
+            maze[*cordY][*cordX + 2].isVisited = true;
+            maze[*cordY][*cordX + 2].isWall = false;
+            maze[*cordY][*cordX + 1].isVisited = true;
+            maze[*cordY][*cordX + 1].isWall = false;
+            ++* unvisitedCells++;
+        }
+        *cordX += 2;
+        break;
+    case 2:
+        if (maze[*cordY + 2][*cordX].isVisited == false) {
+            maze[*cordY + 2][*cordX].isVisited = true;
+            maze[*cordY + 2][*cordX].isWall = false;
+            maze[*cordY + 1][*cordX].isVisited = true;
+            maze[*cordY + 1][*cordX].isWall = false;
+            ++* unvisitedCells++;
+        }
+        *cordY += 2;
+        break;
+    case 3:
+        if (maze[*cordY][*cordX - 2].isVisited == false) {
+            maze[*cordY][*cordX - 2].isVisited = true;
+            maze[*cordY][*cordX - 2].isWall = false;
+            maze[*cordY][*cordX - 1].isVisited = true;
+            maze[*cordY][*cordX - 1].isWall = false;
+            ++* unvisitedCells++;
+        }
+        *cordX -= 2;
+        break;
+    }
+}
+
+// this function checks if the player is trying to move towards a wall
+void playerMovement(CELL** maze) {
+    switch (_getch()) {
+    case KEY_UP:
+        if (maze[playerCord.playerY - 1][playerCord.playerX].isWall == false) {
+            maze[playerCord.playerY][playerCord.playerX].isPlayer = false;
+            playerCord.playerY -= 1;
+            maze[playerCord.playerY][playerCord.playerX].isPlayer = true;
+        }
+        else {
+            cout << "Can't move there!";
+        }
+        break;
+    case KEY_DOWN:
+        if (maze[playerCord.playerY + 1][playerCord.playerX].isWall == false) {
+            maze[playerCord.playerY][playerCord.playerX].isPlayer = false;
+            playerCord.playerY += 1;
+            maze[playerCord.playerY][playerCord.playerX].isPlayer = true;
+        }
+        else {
+            cout << "Can't move there!";
+        }
+        break;
+    case KEY_LEFT:
+        if (maze[playerCord.playerY][playerCord.playerX - 1].isWall == false) {
+            maze[playerCord.playerY][playerCord.playerX].isPlayer = false;
+            playerCord.playerX -= 1;
+            maze[playerCord.playerY][playerCord.playerX].isPlayer = true;
+        }
+        else {
+            cout << "Can't move there!";
+        }
+        break;
+    case KEY_RIGHT:
+        if (maze[playerCord.playerY][playerCord.playerX + 1].isWall == false) {
+            maze[playerCord.playerY][playerCord.playerX].isPlayer = false;
+            playerCord.playerX += 1;
+            maze[playerCord.playerY][playerCord.playerX].isPlayer = true;
+        }
+        else {
+            cout << "Can't move there!";
+        }
+        break;
+    }
+}
+
+bool freeCheck(int dir, int size, int cordY, int cordX) {
+    return (dir == 0 && cordY == 1) or
+        (dir == 2 && cordY == size - 2) or
+        (dir == 1 && cordX == size - 2) or
+        (dir == 3 && cordX == 1);
+}
+
+//This function is used to display a text,when you win the game.
+void winningText() {
+    cout << "*---------------------------------------------*" << endl;
+    cout << "|   __     __                    _       _    |\n"
+        "|   \\ \\   / /                   (_)     | |   |\n"
+        "|    \\ \\_/ /__  _   _  __      ___ _ __ | |   |\n"
+        "|     \\   / _ \\| | | | \\ \\ /\\ / / | '_ \\| |   |\n"
+        "|      | | (_) | |_| |  \\ V  V /| | | | |_|   |\n"
+        "|      |_|\\___/ \\__,_|   \\_/ \\_/|_|_| |_(_)   |\n";
+    cout << "*---------------------------------------------*" << endl;
+}
 void getUserName(string& userName)
 {
-	//Declare appropriate variables.
-	int strLength, counter = 0;
+    //Declare appropriate variables.
+    int strLength, counter = 0;
 
-	//Asks the user to type his/her name to proceed.
-	system("cls");
-	cout << "*-------------------------------------*" << endl;
-	cout << ":       Please enter your name.       :" << endl;
-	cout << ":                                     :" << endl;
-	cout << "*-------------------------------------*" << endl;
-	getline(cin, userName);
+    //Asks the user to type his/her name to proceed.
+    cout << "*-------------------------------------*" << endl;
+    cout << ":       Please enter your name.       :" << endl;
+    cout << ":                                     :" << endl;
+    cout << "*-------------------------------------*" << endl;
+    getline(cin, userName);
 
-	//Finding how many letters are there in the user input.
-	strLength = userName.length();
+    //Finding how many letters are there in the user input.
+    strLength = userName.length();
 
-	//Input Validation.
-	while (counter < strLength || counter == 0)
-	{
-		//Validation. Only a letter and one word is allowed.
-		if (!isalpha(userName[counter]))
-		{
-			system("cls");
-			cout << "*-------------------------------------*" << endl;
-			cout << ":      Please enter a valid name      :" << endl;
-			cout << ":      containing one word only.      :" << endl;
-			cout << "*-------------------------------------*" << endl;
-			getline(cin, userName);
-			strLength = userName.length();
-			counter = 0;
-		}
-		//Validation. The name cannot have more than 10 letters.
-		else if (strLength > 10)
-		{
-			system("cls");
-			cout << "*-------------------------------------*" << endl;
-			cout << ": Your name cannot exceed 10 letters. :" << endl;
-			cout << ":     Please type another name.       :" << endl;
-			cout << "*-------------------------------------*" << endl;
-			getline(cin, userName);
-			strLength = userName.length();
-			counter = 0;
-		}
-		else
-		{
-			counter++;
-		}
-	}
+    //Input Validation.
+    while (counter < strLength || counter == 0)
+    {
+        //Validation. Only a letter and one word is allowed.
+        if (!isalpha(userName[counter]))
+        {
+            system("cls");
+            cout << "*-------------------------------------*" << endl;
+            cout << ":      Please enter a valid name      :" << endl;
+            cout << ":      containing one word only.      :" << endl;
+            cout << "*-------------------------------------*" << endl;
+            getline(cin, userName);
+            strLength = userName.length();
+            counter = 0;
+        }
+        //Validation. The name cannot have more than 10 letters.
+        else if (strLength > 10)
+        {
+            system("cls");
+            cout << "*-------------------------------------*" << endl;
+            cout << ": Your name cannot exceed 10 letters. :" << endl;
+            cout << ":     Please type another name.       :" << endl;
+            cout << "*-------------------------------------*" << endl;
+            getline(cin, userName);
+            strLength = userName.length();
+            counter = 0;
+        }
+        else
+        {
+            counter++;
+        }
+    }
 }
 
-//Function that validates user's input for menu selection.
-void validateUserResponse(string& select)
-{
-	//Simple. only 1, 2, 3, 4, 5, n, N is allowed.
-	while (!(select == "1" || select == "2" || select == "3" || select == "4" || select == "5" || select == "n" || select == "N"))
-	{
-		system("cls");
-		cout << "*-------------------------------------*" << endl;
-		cout << ":       Invalid menu selection.       :" << endl;
-		cout << ":   Please type from the choice ().   :" << endl;
-		cout << "*-------------------------------------*" << endl;
-		cout << ":              Game Menu              :" << endl;
-		cout << ":    (1) Addition                     :" << endl;
-		cout << ":    (2) Subtraction                  :" << endl;
-		cout << ":    (3) Multiplication               :" << endl;
-		cout << ":    (4) Division                     :" << endl;
-		cout << ":    (5) Current statistic            :" << endl;
-		cout << ":    (N) Save and return to home      :" << endl;
-		cout << "*-------------------------------------*" << endl;
-		getline(cin, select);
-	}
-}
 
-//Value returning function that validates user's answer for game problems.
-int validateUserAnswer(string answer)
-{
-	//Declare appropriate variables.
-	int strLength, answerNum = 0, counter = 0;
-	char nextChar;
+// this is the main function
+int main() {
+    system("color 4");
+    srand((unsigned int)time(NULL));
 
-	//Finding how many chars are there from the user's input.
-	strLength = answer.length();
+    int cordY, cordX = 1;
+    int cellCount = 0;
+    char free = ' ';
+    char player = char(2);
+    int size;
+    string name;
+    getUserName(name);
+    system("cls");
+    menu();
+    do {
+        cout << "Enter the size of the maze: ";
+        cin >> size;
 
-	//Input Validation.
-	while (counter < strLength || counter == 0)
-	{
-		//Validatation. Only numbers are allowed.
-		if (!isdigit(answer[counter]))
-		{
-			cout << "Please type positive integer." << endl;
-			getline(cin, answer);
-			strLength = answer.length();
-			counter = 0;
-		}
-		else
-		{
-			counter++;
-		}
-	}
+        if (size <= 1) {
+            cout << "Enter a number of 2 and above! ";
+            cin >> size;
+        }
+    } while (size <= 1);
+    system("cls");
+    cout << "Okay, " << name << " let's see how well will you go" << endl;
 
-	//Convert the user's answer to integer datatype.
-	for (int counter = 0; counter < strLength; counter++)
-	{
-		nextChar = answer[counter];
-		answerNum = answerNum * 10 + (nextChar - '0');
-	}
+    cordY = 1;
 
-	//Return the answer as an integer value.
-	return answerNum;
-}
+    size = size * 2 + 1;
 
-//Value returning Function that Checks whether the user's answer is correct or wrong.
-int checkUserAnswer(int correctAnswer, int answerNum)
-{
-	system("cls");
+    CELL** maze = new CELL * [size];
+    for (int i = 0; i < size; i++) {
+        maze[i] = new CELL[size];
+    }
 
-	//If the answer is correct, returns the value as 1.
-	if (correctAnswer == answerNum)
-	{
-		cout << "*-------------------------------------*" << endl;
-		cout << ":         That is correct!            :" << endl;
-		cout << ":                                     :" << endl;
-		return 1;
-	}
-	//If the answer is incorrect, returns the value as 0.
-	else
-	{
-		cout << "*-------------------------------------*" << endl;
-		cout << ":         That is wrong. :(           :" << endl;
-		cout << ":                                     :" << endl;
-		return 0;
-	}
-}
+    maze[cordY][cordX - 1].isPlayer = true;
+    maze[cordY][cordX - 1].isVisited = true;
+    maze[size - 2][size - 1].isVisited = true;
 
-//Function that updates the user's statistic.
-void updateStats(int rightOrWrong, int& correct, int& wrong, double& earning)
-{
-	//By using the rightOrWrong variable, update the statistic of the user.
-	if (rightOrWrong == 1)
-	{
-		correct += 1;
-		earning += 0.05;
-	}
-	else
-	{
-		wrong += 1;
-		earning -= 0.03;
-	}
-}
+    createWalls(maze, size, &cellCount);
 
-//Function that displays the User's current progress.
-void displayStats(string name, int correct, int wrong, double earning)
-{
-	//That precision tho. Looking nice and neat.
-	cout << "*-------------------------------------*" << endl;
-	cout << ":              Statistic              :" << endl;
-	cout << ":                                     :" << endl;
-	cout << "*-------------------------------------*" << endl;
-	cout << ":                                     :" << endl;
-	cout << ":   Name:                  " << left << setw(10) << name << " :" << endl;
-	cout << ":   Total correct answer:  " << left << setw(3) << correct << "        :" << endl;
-	cout << ":   Total wrong answer:    " << left << setw(3) << wrong << "        :" << endl;
-	cout << ":   Total earning:         $" << left << setw(6) << fixed << showpoint << setprecision(2) << earning << "    :" << endl;
-	cout << ":                                     :" << endl;
-	cout << ":                                     :" << endl;
-	cout << "*-------------------------------------*" << endl;
-	system("pause");
-}
+    maze[cordY][cordX - 1].isWall = false;
+    maze[size - 2][size - 1].isWall = false;
 
-//Function that saves the current progress to the txt file when exiting the game.
-void saveStats(ofstream& outputFile, string name, int correct, int wrong, double earning)
-{
-	//Declare appropriate variables.
-	string userName;
-	userName = name + ".txt";
+    bool unvisitedCheck = true;
+    int unvisitedCells = 0;
 
-	//Open the outputFile with the text file named user name.
-	outputFile.open(userName.c_str());
+    while (unvisitedCheck) {
+        if (unvisitedCells == cellCount) {
+            unvisitedCheck = false;
+        }
+        int dir;
+        do {
+            dir = rand() % 4;
+        } while (freeCheck(dir, size, cordY, cordX));
 
-	//write the data.
-	outputFile << name << endl;
-	outputFile << correct << endl;
-	outputFile << wrong << endl;
-	outputFile << fixed << showpoint << setprecision(2) << earning << endl;
+        toVisited(maze, &cordY, &cordX, dir, &unvisitedCells);
+    }
 
-	//Close the outputFile.
-	outputFile.close();
-}
-
-//Function that generate addition problem. The function will return an integer value of correct answer to that problem.
-int generateAddition()
-{
-	system("cls");
-
-	//Declare appropriate variables.
-	int num1, num2, correctAnswer;
-
-	//Create 2 random numbers ranging from 1 to 10.
-	num1 = (rand() % 10) + 1;
-	num2 = (rand() % 10) + 1;
-
-	//set the correct answer.
-	correctAnswer = num1 + num2;
-
-	//Display the game problem to the user.
-	cout << "*-------------------------------------*" << endl;
-	cout << ":              Addition               :" << endl;
-	cout << ":             " << setw(2) << num1 << " + " << setw(2) << num2 << " = ?             :" << endl;
-	cout << "*-------------------------------------*" << endl;
-
-	//return an integer value of the correct answer.
-	return correctAnswer;
-}
-
-//Function that generate subtraction problem. The function will return an integer value of correct answer to that problem.
-int generateSubtraction()
-{
-	system("cls");
-
-	//Declare appropriate variables.
-	int num1, num2, correctAnswer;
-
-	//Create 2 random numbers. num1 ranges from 1 to 10.
-	//num2 ranges from 1 to num1 because we need num2 to be less than num1.
-	num1 = (rand() % 10) + 1;
-	num2 = (rand() % num1) + 1;
-
-	//set the correct answer.
-	correctAnswer = num1 - num2;
-
-	//Display the game problem to the user.
-	cout << "*-------------------------------------*" << endl;
-	cout << ":             Subtraction             :" << endl;
-	cout << ":             " << setw(2) << num1 << " - " << setw(2) << num2 << " = ?             :" << endl;
-	cout << "*-------------------------------------*" << endl;
-
-	//return an integer value of the correct answer.
-	return correctAnswer;
-}
-
-//Function that generate multiplication problem. The function will return an integer value of correct answer to that problem.
-int generateMultiplication()
-{
-	system("cls");
-
-	//Declare appripriate variables.
-	int num1, num2, correctAnswer;
-
-	//Create 2 random numbers ranging from 1 to 10.
-	num1 = (rand() % 10) + 1;
-	num2 = (rand() % 10) + 1;
-
-	//set the correct answer.
-	correctAnswer = num1 * num2;
-
-	//Display the game problem to the user.
-	cout << "*-------------------------------------*" << endl;
-	cout << ":            Muliplication            :" << endl;
-	cout << ":             " << setw(2) << num1 << " x " << setw(2) << num2 << " = ?             :" << endl;
-	cout << "*-------------------------------------*" << endl;
-
-	//return an integer value of the correct answer.
-	return correctAnswer;
-}
-
-//Function that generate division problem. The function will return an integer value of correct answer to that problem.
-int generateDivision()
-{
-	system("cls");
-
-	//Declare appripriate variables.
-	int num1, num2, correctAnswer;
-
-	//Create 2 random numbers. num1 ranges from 1 to 10.
-	//num2 first generate number that ranges from 1 to 10 and it is multiplied by the num1.
-	//the former number of num2 before multiplying, that value will be the correct answer.
-	num1 = (rand() % 10) + 1;
-	num2 = ((rand() % 10) + 1) * num1;
-
-	//set the correct answer.
-	correctAnswer = num2 / num1;
-
-	//Display the game problem to the user.
-	cout << "*-------------------------------------*" << endl;
-	cout << ":              Division               :" << endl;
-	cout << ":             " << setw(2) << num2 << " / " << setw(2) << num1 << " = ?             :" << endl;
-	cout << "*-------------------------------------*" << endl;
-
-	//return an integer value of the correct answer.
-	return correctAnswer;
+    bool playerWon = true;
+    while (playerWon) {
+        if (maze[size - 2][size - 1].isPlayer == true) {
+            system("cls");
+            winningText();
+            break;
+        }
+        char input;
+        printMaze(maze, size, free, player);
+        cout << "\n\n\n";
+        cout << "*--------------------------*" << endl;
+        cout << "|       Instructions:      |" << endl;
+        cout << "|  Use the arrows to move  |" << endl;
+        cout << "*--------------------------*";
+        playerMovement(maze);
+        system("cls");
+    }
 }
